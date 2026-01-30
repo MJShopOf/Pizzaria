@@ -389,12 +389,7 @@
 
             <!-- Items Container -->
             <div id="cart-items-container" class="flex-1 overflow-y-auto p-5 space-y-4">
-                <!-- Injetado via JS -->
-                <div id="empty-cart-msg" class="h-full flex flex-col items-center justify-center text-neutral-500 space-y-4">
-                    <i data-lucide="shopping-cart" class="w-16 h-16 opacity-20"></i>
-                    <p class="text-lg">Seu carrinho está vazio.</p>
-                    <button onclick="toggleCart()" class="text-pizza-red font-semibold hover:underline">Ver Cardápio</button>
-                </div>
+                <!-- Conteúdo gerenciado via JS -->
             </div>
 
             <!-- Footer / Checkout -->
@@ -751,19 +746,22 @@
 
         function renderCart() {
             const container = document.getElementById('cart-items-container');
-            const emptyMsg = document.getElementById('empty-cart-msg');
             const footer = document.getElementById('cart-footer');
             const totalEl = document.getElementById('cart-total');
 
             if (cart.length === 0) {
-                container.innerHTML = '';
-                container.appendChild(emptyMsg);
-                emptyMsg.classList.remove('hidden');
+                container.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-neutral-500 space-y-4 animate-[fadeIn_0.5s]">
+                        <i data-lucide="shopping-cart" class="w-16 h-16 opacity-20"></i>
+                        <p class="text-lg">Seu carrinho está vazio.</p>
+                        <button onclick="toggleCart()" class="text-pizza-red font-semibold hover:underline">Ver Cardápio</button>
+                    </div>
+                `;
                 footer.classList.add('hidden');
+                lucide.createIcons();
                 return;
             }
 
-            emptyMsg.classList.add('hidden');
             footer.classList.remove('hidden');
 
             const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
