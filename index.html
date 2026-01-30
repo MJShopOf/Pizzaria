@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pizza Expresso - A Melhor da Região</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Configuração Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        pizza: {
+                            red: '#E11D48',
+                            dark: '#0F0F0F',
+                            card: '#1A1A1A',
+                            light: '#F5F5F5',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: #0F0F0F;
+            color: #F5F5F5;
+        }
+
+        /* Animações Customizadas */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .fade-in-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1A1A1A;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #E11D48;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Modal Transitions */
+        .modal {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal.open .modal-content {
+            transform: scale(1);
+        }
+        
+        /* Cart Drawer Animation */
+        .drawer {
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .drawer.open {
+            transform: translateX(0);
+        }
+
+        /* Keyframes */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Navegação -->
+    <nav class="fixed w-full z-40 bg-pizza-dark/95 backdrop-blur-md border-b border-neutral-800 transition-all duration-300">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="window.scrollTo(0,0)">
+                <div class="bg-pizza-red p-2 rounded-full text-white flex items-center justify-center hover:rotate-12 transition-transform shadow-lg shadow-red-900/50">
+                    <i data-lucide="pizza" class="w-6 h-6"></i>
+                </div>
+                <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">Pizza Expresso</h1>
+            </div>
+
+            <div class="hidden md:flex items-center gap-8 text-sm font-semibold">
+                <a href="#home" class="hover:text-pizza-red transition relative group">Início</a>
+                <a href="#featured" class="hover:text-pizza-red transition relative group text-yellow-500">Ofertas</a>
+                <a href="#menu" class="hover:text-pizza-red transition relative group">Cardápio</a>
+                <a href="#about" class="hover:text-pizza-red transition relative group">Sobre</a>
+                <a href="#location" class="hover:text-pizza-red transition relative group">Local</a>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <button onclick="toggleModal('search-modal')" class="p-2 hover:bg-neutral-800 rounded-full transition text-white" title="Pesquisar">
+                    <i data-lucide="search" class="w-6 h-6"></i>
+                </button>
+
+                <button onclick="toggleCart()" class="relative p-2 hover:bg-neutral-800 rounded-full transition group">
+                    <i data-lucide="shopping-cart" class="text-white w-6 h-6 group-hover:scale-110 transition"></i>
+                    <span id="cart-count" class="absolute -top-1 -right-1 bg-pizza-red text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full hidden animate-bounce">0</span>
+                </button>
+
+                <button class="md:hidden p-2 text-white" onclick="toggleMobileMenu()">
+                    <i data-lucide="menu"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Menu Mobile -->
+        <div id="mobile-menu" class="hidden md:hidden bg-neutral-900 border-t border-neutral-800 overflow-hidden transition-all duration-300">
+            <div class="p-4 flex flex-col gap-4">
+                <a href="#home" class="block py-2 text-white hover:text-pizza-red" onclick="toggleMobileMenu()">Início</a>
+                <a href="#featured" class="block py-2 text-yellow-500 hover:text-yellow-400" onclick="toggleMobileMenu()">⚡ Ofertas</a>
+                <a href="#menu" class="block py-2 text-white hover:text-pizza-red" onclick="toggleMobileMenu()">Cardápio</a>
+                <a href="#about" class="block py-2 text-white hover:text-pizza-red" onclick="toggleMobileMenu()">Sobre</a>
+                <a href="#location" class="block py-2 text-white hover:text-pizza-red" onclick="toggleMobileMenu()">Local</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="pt-24 pb-12 md:pt-32 md:pb-24 px-4 bg-gradient-to-b from-neutral-900 to-black relative overflow-hidden min-h-[85vh] flex items-center">
+        <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center w-full">
+            <div class="space-y-8 z-10 fade-in-up">
+                <div class="inline-flex items-center gap-2 bg-yellow-500/10 text-yellow-500 px-4 py-1.5 rounded-full text-sm font-bold border border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+                    <i data-lucide="star" class="w-4 h-4 fill-current"></i> #1 A Melhor Pizza da Região
+                </div>
+                
+                <h1 class="text-5xl md:text-7xl font-black text-white leading-tight">
+                    Sabor que <span class="text-transparent bg-clip-text bg-gradient-to-r from-pizza-red to-orange-500">apaixona</span> na primeira mordida.
+                </h1>
+                
+                <p class="text-lg text-neutral-400 max-w-lg leading-relaxed">
+                    Massa artesanal de longa fermentação, ingredientes frescos selecionados e aquele toque de tradição italiana.
+                </p>
+                
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="#menu" class="bg-pizza-red hover:bg-red-600 text-white px-8 py-4 rounded-full font-bold text-lg text-center transition shadow-lg shadow-red-900/40 transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
+                        Fazer Pedido
+                        <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                    </a>
+                    
+                    <div class="flex items-center justify-center gap-3 px-6 py-4 border border-neutral-800 bg-neutral-900/50 backdrop-blur rounded-full text-white">
+                        <div id="status-indicator" class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"></div>
+                        <span id="status-text" class="font-semibold tracking-wide">Fechado Agora</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="relative z-10 flex justify-center fade-in-up" style="transition-delay: 200ms;">
+                <div class="absolute inset-0 bg-pizza-red/20 blur-[100px] rounded-full"></div>
+                <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" 
+                     alt="Pizza deliciosa" 
+                     class="relative w-full max-w-md rounded-2xl shadow-2xl border-4 border-neutral-800 animate-[float_4s_ease-in-out_infinite]">
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Section (Novidade) -->
+    <section id="featured" class="py-16 bg-neutral-900 border-y border-neutral-800 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-orange-900/20 via-neutral-900 to-neutral-900 pointer-events-none"></div>
+        
+        <div class="max-w-6xl mx-auto px-4 relative z-10 fade-in-up">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+                <div>
+                    <div class="flex items-center gap-2 mb-2 text-yellow-500 font-bold tracking-wider text-sm uppercase">
+                        <i data-lucide="flame" class="w-4 h-4 fill-current"></i> Pegando Fogo
+                    </div>
+                    <h2 class="text-3xl md:text-4xl font-bold text-white">Ofertas Imperdíveis</h2>
+                </div>
+                <a href="#menu" class="text-neutral-400 hover:text-white flex items-center gap-2 text-sm font-semibold transition">
+                    Ver cardápio completo <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </a>
+            </div>
+            
+            <div id="featured-grid" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Menu Section -->
+    <section id="menu" class="py-20 px-4 bg-black">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-12 fade-in-up">
+                <span class="text-pizza-red font-bold text-sm uppercase tracking-widest mb-2 block">Nosso Sabor</span>
+                <h2 class="text-3xl md:text-5xl font-black text-white mb-4">Cardápio Completo</h2>
+                <p class="text-neutral-400 text-lg max-w-2xl mx-auto">Navegue pelas categorias e escolha a pizza perfeita para o seu momento.</p>
+            </div>
+
+            <!-- Categorias -->
+            <div class="sticky top-20 z-30 bg-black/80 backdrop-blur-md py-4 mb-8 -mx-4 px-4 md:mx-0 md:px-0 md:static md:bg-transparent md:py-0">
+                <div id="category-container" class="flex overflow-x-auto gap-3 pb-2 scrollbar-hide justify-start md:justify-center fade-in-up">
+                    <!-- Injetado via JS -->
+                </div>
+            </div>
+
+            <!-- Grid de Produtos -->
+            <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in-up">
+                <!-- Injetado via JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-20 px-4 bg-neutral-900 border-y border-neutral-800">
+        <div class="max-w-4xl mx-auto text-center space-y-8 fade-in-up">
+            <h2 class="text-3xl md:text-4xl font-bold text-white">Tradição & Qualidade</h2>
+            <p class="text-lg text-neutral-400 leading-relaxed">
+                Há mais de 10 anos, a Pizza Expresso é referência em sabor. Nossa massa é fermentada naturalmente por 48 horas, resultando em uma base leve, crocante e de fácil digestão. Utilizamos apenas ingredientes frescos e selecionados diariamente para garantir que cada fatia seja uma experiência inesquecível.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8">
+                <div class="p-8 bg-black/50 rounded-2xl border border-neutral-800 hover:border-pizza-red/50 hover:bg-neutral-800/50 transition duration-300 group">
+                    <div class="flex justify-center mb-6 text-neutral-500 group-hover:text-pizza-red transition-colors"><i data-lucide="clock" class="w-12 h-12"></i></div>
+                    <h3 class="font-bold text-xl text-white mb-3">Entrega Express</h3>
+                    <p class="text-neutral-400">Logística otimizada para sua pizza chegar quentinha.</p>
+                </div>
+                <div class="p-8 bg-black/50 rounded-2xl border border-neutral-800 hover:border-pizza-red/50 hover:bg-neutral-800/50 transition duration-300 group">
+                    <div class="flex justify-center mb-6 text-neutral-500 group-hover:text-pizza-red transition-colors"><i data-lucide="chef-hat" class="w-12 h-12"></i></div>
+                    <h3 class="font-bold text-xl text-white mb-3">Receita Original</h3>
+                    <p class="text-neutral-400">Massa secreta e molho de tomate 100% natural.</p>
+                </div>
+                <div class="p-8 bg-black/50 rounded-2xl border border-neutral-800 hover:border-pizza-red/50 hover:bg-neutral-800/50 transition duration-300 group">
+                    <div class="flex justify-center mb-6 text-neutral-500 group-hover:text-pizza-red transition-colors"><i data-lucide="smartphone" class="w-12 h-12"></i></div>
+                    <h3 class="font-bold text-xl text-white mb-3">Pedido Fácil</h3>
+                    <p class="text-neutral-400">Interface simples e integração direta com WhatsApp.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Location Section -->
+    <section id="location" class="py-20 px-4 bg-black">
+        <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 fade-in-up">
+            <div class="space-y-10 flex flex-col justify-center">
+                <div>
+                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-8">Venha nos visitar</h2>
+                    
+                    <div class="space-y-6">
+                        <div class="flex items-start gap-5 group">
+                            <div class="bg-neutral-900 p-3 rounded-lg group-hover:bg-pizza-red transition-colors">
+                                <i data-lucide="map-pin" class="text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-white text-lg mb-1">Endereço</h3>
+                                <p class="text-neutral-400">Av. João Gomes Cardoso, 374<br>Jardim Laguna, Contagem - MG</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start gap-5 group">
+                            <div class="bg-neutral-900 p-3 rounded-lg group-hover:bg-pizza-red transition-colors">
+                                <i data-lucide="clock" class="text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-white text-lg mb-1">Horário de Funcionamento</h3>
+                                <p class="text-neutral-400">Domingo a Quita<br>18:00 às 23:00</p>
+                                <p class="text-neutral-400">Sexta e Sábado<br>18:00 às 23:59</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-5 group">
+                            <div class="bg-neutral-900 p-3 rounded-lg group-hover:bg-green-600 transition-colors">
+                                <i data-lucide="message-circle" class="text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-white text-lg mb-1">Delivery</h3>
+                                <p class="text-neutral-400">(31) 99079-5020</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <a href="https://www.google.com/maps/search/?api=1&query=Av.+João+Gomes+Cardoso,+374+-+Jardim+Laguna,+Contagem+-+MG" 
+                   target="_blank" 
+                   class="inline-flex items-center justify-center bg-white hover:bg-neutral-200 text-black px-8 py-4 rounded-lg font-bold transition w-full md:w-auto gap-2">
+                    <i data-lucide="map" class="w-5 h-5"></i> Abrir no Google Maps
+                </a>
+            </div>
+            
+            <div class="bg-neutral-900 rounded-2xl overflow-hidden h-[400px] md:h-full border border-neutral-800 relative group shadow-2xl">
+                <iframe 
+                    class="w-full h-full grayscale group-hover:grayscale-0 transition duration-700"
+                    frameBorder="0" 
+                    scrolling="no" 
+                    title="Mapa de Localização"
+                    src="https://maps.google.com/maps?q=Av.+Jo%C3%A3o+Gomes+Cardoso%2C+374+-+Jardim+Laguna%2C+Contagem+-+MG&t=&z=15&ie=UTF8&iwloc=&output=embed">
+                </iframe>
+                <div class="absolute inset-0 pointer-events-none border-4 border-neutral-800/50 rounded-2xl z-10"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-neutral-900 border-t border-neutral-800 pt-16 pb-8 px-4">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-8 mb-12">
+                <div class="text-center md:text-left">
+                    <div class="flex items-center gap-2 justify-center md:justify-start mb-4">
+                        <i data-lucide="pizza" class="text-pizza-red w-6 h-6"></i>
+                        <h2 class="text-2xl font-bold text-white">Pizza Expresso</h2>
+                    </div>
+                    <p class="text-neutral-500 text-sm max-w-xs">A verdadeira pizza artesanal, feita com amor e entregue com rapidez.</p>
+                </div>
+                
+                <div class="flex gap-6">
+                    <a href="https://www.instagram.com/pizza_expresso_laguna/" target="_blank" class="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center text-neutral-400 hover:bg-pizza-red hover:text-white transition">
+                        <i data-lucide="instagram" class="w-5 h-5"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="border-t border-neutral-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-neutral-600 text-sm">© 2024 MJShop. Todos os direitos reservados.</p>
+                <button onclick="toggleModal('staff-modal')" class="text-xs font-semibold text-neutral-700 hover:text-white transition px-4 py-2 rounded hover:bg-neutral-800">
+                    Acesso Restrito
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Botão Flutuante WhatsApp -->
+    <a href="https://wa.me/5531990795020" target="_blank" 
+       class="fixed bottom-6 right-6 bg-[#25D366] hover:bg-[#1db954] text-white p-4 rounded-full shadow-lg shadow-green-900/40 z-30 flex items-center justify-center transform hover:scale-110 transition duration-300 animate-bounce-slow">
+        <i data-lucide="phone" class="fill-current w-7 h-7"></i>
+    </a>
+
+    <!-- CART MODAL (Drawer) -->
+    <div id="cart-modal" class="fixed inset-0 z-50 flex justify-end modal">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onclick="toggleCart()"></div>
+        
+        <div id="cart-drawer" class="drawer relative w-full max-w-md bg-pizza-card h-full shadow-2xl border-l border-neutral-800 flex flex-col z-50 transform transition-transform duration-300">
+            <!-- Header -->
+            <div class="p-5 border-b border-neutral-800 flex justify-between items-center bg-pizza-red">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i data-lucide="shopping-bag" class="w-6 h-6"></i> Seu Pedido
+                </h2>
+                <button onclick="toggleCart()" class="text-white hover:bg-white/20 p-2 rounded-full transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- Items Container -->
+            <div id="cart-items-container" class="flex-1 overflow-y-auto p-5 space-y-4">
+                <!-- Injetado via JS -->
+                <div id="empty-cart-msg" class="h-full flex flex-col items-center justify-center text-neutral-500 space-y-4">
+                    <i data-lucide="shopping-cart" class="w-16 h-16 opacity-20"></i>
+                    <p class="text-lg">Seu carrinho está vazio.</p>
+                    <button onclick="toggleCart()" class="text-pizza-red font-semibold hover:underline">Ver Cardápio</button>
+                </div>
+            </div>
+
+            <!-- Footer / Checkout -->
+            <div id="cart-footer" class="p-5 border-t border-neutral-800 bg-neutral-900 hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <span class="text-neutral-400">Total do Pedido</span>
+                    <span id="cart-total" class="text-3xl font-bold text-white">R$ 0,00</span>
+                </div>
+                
+                <!-- Form Simplificado -->
+                <div class="space-y-4 mb-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <input id="client-name" type="text" placeholder="Seu Nome" class="w-full bg-black border border-neutral-700 text-white p-3 rounded-lg focus:outline-none focus:border-pizza-red transition placeholder-neutral-600">
+                        <input id="client-phone" type="tel" placeholder="WhatsApp" class="w-full bg-black border border-neutral-700 text-white p-3 rounded-lg focus:outline-none focus:border-pizza-red transition placeholder-neutral-600">
+                    </div>
+                    <textarea id="client-address" rows="2" placeholder="Endereço para entrega (Rua, Número, Bairro, Complemento)" class="w-full bg-black border border-neutral-700 text-white p-3 rounded-lg focus:outline-none focus:border-pizza-red transition resize-none placeholder-neutral-600"></textarea>
+                    
+                    <div>
+                        <label class="text-xs text-neutral-500 mb-2 block uppercase font-bold tracking-wider">Forma de Pagamento</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="setPayment('PIX')" class="payment-btn p-3 rounded-lg border border-neutral-700 text-neutral-400 text-xs font-bold flex flex-col items-center gap-1 bg-black hover:border-neutral-500 transition" data-method="PIX">
+                                <i data-lucide="zap" class="w-4 h-4 mb-1"></i> PIX
+                            </button>
+                            <button onclick="setPayment('CARTAO')" class="payment-btn p-3 rounded-lg border border-neutral-700 text-neutral-400 text-xs font-bold flex flex-col items-center gap-1 bg-black hover:border-neutral-500 transition" data-method="CARTAO">
+                                <i data-lucide="credit-card" class="w-4 h-4 mb-1"></i> CARTÃO
+                            </button>
+                            <button onclick="setPayment('DINHEIRO')" class="payment-btn p-3 rounded-lg border border-neutral-700 text-neutral-400 text-xs font-bold flex flex-col items-center gap-1 bg-black hover:border-neutral-500 transition" data-method="DINHEIRO">
+                                <i data-lucide="banknote" class="w-4 h-4 mb-1"></i> DINHEIRO
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <input id="client-change" type="text" placeholder="Troco para quanto?" class="w-full bg-neutral-800 border border-neutral-600 text-white p-3 rounded-lg focus:outline-none focus:border-pizza-red hidden animate-[fadeIn_0.3s]">
+                </div>
+
+                <button onclick="checkout()" class="w-full bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition transform active:scale-95">
+                    <span>Finalizar Pedido</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEARCH MODAL -->
+    <div id="search-modal" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md overflow-y-auto p-4 modal flex flex-col">
+        <div class="max-w-4xl w-full mx-auto md:p-8 modal-content flex-grow">
+            <div class="flex justify-end mb-8">
+                <button onclick="toggleModal('search-modal')" class="text-neutral-400 hover:text-white transition bg-neutral-800 p-2 rounded-full">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <div class="relative mb-12 group">
+                <input id="search-input" type="text" placeholder="O que você procura hoje?" 
+                       onkeyup="handleSearch(this.value)"
+                       class="w-full bg-transparent border-b-2 border-neutral-700 text-3xl md:text-5xl text-white py-4 focus:outline-none focus:border-pizza-red placeholder-neutral-700 font-bold transition-colors">
+                <i data-lucide="search" class="absolute right-0 top-1/2 -translate-y-1/2 text-neutral-600 w-8 h-8 group-focus-within:text-pizza-red transition-colors"></i>
+            </div>
+
+            <h3 id="search-title" class="text-xl text-neutral-400 mb-6 font-semibold flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-5 h-5"></i> Sugestões do Chef
+            </h3>
+            <div id="search-results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Results -->
+            </div>
+        </div>
+    </div>
+
+    <!-- STAFF MODAL -->
+    <div id="staff-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md modal">
+        <div class="bg-neutral-900 w-full max-w-sm rounded-2xl border border-neutral-700 p-6 relative modal-content shadow-2xl">
+            <button onclick="toggleModal('staff-modal')" class="absolute top-4 right-4 text-neutral-400 hover:text-white transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            
+            <div class="mb-6 text-center">
+                <div class="w-12 h-12 bg-neutral-800 rounded-full flex items-center justify-center mx-auto mb-3 text-white">
+                    <i data-lucide="user-cog" class="w-6 h-6"></i>
+                </div>
+                <h2 class="text-xl font-bold text-white">Área do Funcionário</h2>
+                <p class="text-sm text-neutral-400">Notificar cliente sobre o status.</p>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-xs uppercase font-bold text-neutral-500 mb-2">WhatsApp do Cliente</label>
+                <div class="relative">
+                    <i data-lucide="phone" class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 w-4 h-4"></i>
+                    <input id="staff-phone" type="tel" placeholder="DDD + Número" class="w-full bg-black border border-neutral-700 text-white py-3 pl-10 pr-3 rounded-lg focus:ring-1 focus:ring-pizza-red focus:border-pizza-red focus:outline-none transition">
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <button onclick="sendStaffUpdate('RECEIVED')" class="w-full bg-blue-600/10 hover:bg-blue-600 text-blue-500 hover:text-white border border-blue-600/30 hover:border-blue-600 p-3 rounded-lg flex items-center justify-center gap-2 font-medium transition duration-300">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i> Pedido Confirmado
+                </button>
+                <button onclick="sendStaffUpdate('PREPARING')" class="w-full bg-orange-600/10 hover:bg-orange-600 text-orange-500 hover:text-white border border-orange-600/30 hover:border-orange-600 p-3 rounded-lg flex items-center justify-center gap-2 font-medium transition duration-300">
+                    <i data-lucide="flame" class="w-5 h-5"></i> Em Preparo
+                </button>
+                <button onclick="sendStaffUpdate('DELIVERING')" class="w-full bg-green-600/10 hover:bg-green-600 text-green-500 hover:text-white border border-green-600/30 hover:border-green-600 p-3 rounded-lg flex items-center justify-center gap-2 font-medium transition duration-300">
+                    <i data-lucide="bike" class="w-5 h-5"></i> Saiu para Entrega
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DADOS ---
+        const CATEGORIES = {
+            OFERTA: 'Ofertas',
+            TRADICIONAL: 'Tradicionais',
+            ESPECIAL: 'Especiais',
+            DOCE: 'Doces',
+            BEBIDA: 'Bebidas',
+            COMBO: 'Combos'
+        };
+
+        const MENU_ITEMS = [
+            // Combos
+            { id: 'c1', name: 'Combo Casal', description: '1 Pizza Grande (Tradicional) + 1 Refrigerante 2L', price: 69.90, image: 'https://images.unsplash.com/photo-1593560708920-63878b67dd0f?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.COMBO, isPromo: true },
+            { id: 'c2', name: 'Combo Família', description: '2 Pizzas Grandes (Tradicional) + 1 Refrigerante 2L + Borda Grátis', price: 119.90, image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.COMBO, isPromo: true },
+            
+            // Tradicionais
+            { id: 'p1', name: 'Calabresa', description: 'Mussarela, calabresa fatiada e cebola.', price: 45.00, image: 'https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.TRADICIONAL, isPromo: true },
+            { id: 'p2', name: 'Mussarela', description: 'Muito queijo mussarela, tomate e orégano.', price: 42.00, image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.TRADICIONAL },
+            { id: 'p3', name: 'Marguerita', description: 'Mussarela, rodelas de tomate e manjericão fresco.', price: 45.00, image: 'https://images.unsplash.com/photo-1595854341625-f71831d39e70?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.TRADICIONAL },
+            { id: 'p4', name: 'Portuguesa', description: 'Mussarela, presunto, ovo, cebola, ervilha e palmito.', price: 48.00, image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.TRADICIONAL },
+            { id: 'p5', name: 'Frango com Catupiry', description: 'Frango desfiado temperado com cobertura de Catupiry original.', price: 49.90, image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.TRADICIONAL },
+            { id: 'p6', name: 'Bacon', description: 'Mussarela e cubos de bacon crocante.', price: 47.00, image: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.TRADICIONAL },
+            { id: 'p7', name: 'Napolitana', description: 'Mussarela, rodelas de tomate, parmesão e orégano.', price: 44.00, image: 'https://images.unsplash.com/photo-1585238342024-78d387f4a707?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.TRADICIONAL },
+
+            // Especiais
+            { id: 'e1', name: 'Pepperoni', description: 'Mussarela e fatias generosas de pepperoni.', price: 55.00, image: 'https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.ESPECIAL },
+            { id: 'e2', name: 'Quatro Queijos', description: 'Mussarela, provolone, parmesão e catupiry.', price: 58.00, image: 'https://images.unsplash.com/photo-1573821663912-569905455b1c?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.ESPECIAL },
+            { id: 'e3', name: 'Carne Seca com Catupiry', description: 'Carne seca desfiada, cebola e cobertura de catupiry.', price: 60.00, image: 'https://images.unsplash.com/photo-1535924272558-b5c974fab35a?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.ESPECIAL },
+            { id: 'e4', name: 'Lombo Canadense', description: 'Lombo canadense, cebola, catupiry e azeitonas pretas.', price: 56.00, image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.ESPECIAL },
+            { id: 'e5', name: 'Vegetariana', description: 'Mussarela, brócolis, palmito, champignon, tomate seco e azeitonas.', price: 52.00, image: 'https://images.unsplash.com/photo-1585238342024-78d387f4a707?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.ESPECIAL },
+            { id: 'e6', name: 'Moda da Casa', description: 'Mussarela, presunto, bacon, milho, palmito, ovos.', price: 62.00, image: 'https://images.unsplash.com/photo-1594007654729-407eedc4be65?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.ESPECIAL, isPromo: true },
+
+            // Doces
+            { id: 'd1', name: 'Chocolate com Morango', description: 'Chocolate ao leite derretido e pedaços de morango.', price: 35.00, image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.DOCE },
+            { id: 'd2', name: 'Banana com Canela', description: 'Banana fatiada, leite condensado e canela.', price: 32.00, image: 'https://images.unsplash.com/photo-1519915093369-e949863d6f70?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.DOCE },
+            { id: 'd3', name: 'Romeu e Julieta', description: 'Goiabada cremosa com queijo minas ou catupiry.', price: 36.00, image: 'https://images.unsplash.com/photo-1541745537411-b8096dc29c42?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.DOCE },
+            { id: 'd4', name: 'Prestígio', description: 'Chocolate ao leite com coco ralado.', price: 36.00, image: 'https://images.unsplash.com/photo-1605478371310-a9f1e96b4ff4?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.DOCE },
+
+            // Bebidas
+            { id: 'b1', name: 'Coca-Cola 2L', description: 'Garrafa 2 Litros', price: 14.00, image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.BEBIDA },
+            { id: 'b2', name: 'Guaraná Antarctica 2L', description: 'Garrafa 2 Litros', price: 12.00, image: 'https://images.unsplash.com/photo-1624517452488-04869289c4ca?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.BEBIDA },
+            { id: 'b3', name: 'Suco Del Valle 1L', description: 'Sabores Variados (Uva ou Pêssego).', price: 12.00, image: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.BEBIDA },
+            { id: 'b4', name: 'Heineken Long Neck', description: '330ml (Proibido para menores de 18 anos).', price: 10.00, image: 'https://images.unsplash.com/photo-1618885472179-5e474019f2a9?auto=format&fit=crop&w=400&q=80', category: CATEGORIES.BEBIDA }
+        ];
+
+        const PIZZERIA_INFO = {
+            name: "Pizza Expresso",
+            phone: "5531990795020"
+        };
+
+        // --- ESTADO ---
+        let cart = [];
+        let currentCategory = 'TODOS';
+        let paymentMethod = 'PIX';
+
+        // --- INICIALIZAÇÃO ---
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            checkOpenStatus();
+            renderFeatured(); // New Featured Section
+            renderCategories();
+            renderMenu();
+            renderCart();
+            setupScrollObserver();
+            setPayment('PIX'); // Default
+        });
+
+        function setupScrollObserver() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.fade-in-up').forEach(el => observer.observe(el));
+        }
+
+        function checkOpenStatus() {
+            const hour = new Date().getHours();
+            const isOpen = hour >= 18 || hour <= 0;
+            const indicator = document.getElementById('status-indicator');
+            const text = document.getElementById('status-text');
+
+            if (isOpen) {
+                indicator.className = 'w-3 h-3 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]';
+                text.textContent = 'Estamos Abertos';
+                text.classList.add('text-green-500');
+            } else {
+                indicator.className = 'w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]';
+                text.textContent = 'Fechado Agora';
+                text.classList.add('text-red-500');
+            }
+        }
+
+        // --- FEATURED LOGIC (NEW) ---
+        function renderFeatured() {
+            const container = document.getElementById('featured-grid');
+            // Pega as 3 primeiras ofertas
+            const featuredItems = MENU_ITEMS.filter(i => i.isPromo).slice(0, 3);
+            
+            container.innerHTML = featuredItems.map(item => `
+                <div class="relative group cursor-pointer transform hover:-translate-y-2 transition-all duration-300" onclick="addToCart('${item.id}')">
+                    <!-- Glow Effect -->
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-pizza-red to-orange-500 rounded-2xl opacity-20 group-hover:opacity-75 blur transition duration-500"></div>
+                    
+                    <div class="relative bg-pizza-card rounded-xl overflow-hidden h-full border border-neutral-800 flex flex-col shadow-xl">
+                        <div class="h-56 overflow-hidden relative">
+                            <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110">
+                            <div class="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg shadow-lg flex items-center gap-1 z-10">
+                                <i data-lucide="flame" class="w-3 h-3 fill-current"></i> TOP OFERTA
+                            </div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60"></div>
+                        </div>
+                        <div class="p-6 flex flex-col flex-grow relative -mt-10">
+                            <div class="mb-4">
+                                <h3 class="text-2xl font-bold text-white mb-1 group-hover:text-pizza-red transition leading-tight">${item.name}</h3>
+                                <div class="flex items-center gap-2 mb-2">
+                                     <span class="text-xs font-bold text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20">Mais Vendido</span>
+                                </div>
+                                <p class="text-neutral-400 text-sm line-clamp-2">${item.description}</p>
+                            </div>
+                            <div class="mt-auto flex justify-between items-center pt-4 border-t border-neutral-800">
+                                <div class="flex flex-col">
+                                    <span class="text-xs text-neutral-500 line-through">R$ ${(item.price * 1.2).toFixed(2)}</span>
+                                    <span class="text-2xl font-bold text-white">R$ ${item.price.toFixed(2)}</span>
+                                </div>
+                                <button class="bg-pizza-red hover:bg-red-600 text-white w-10 h-10 rounded-full shadow-lg shadow-red-900/40 transition transform active:scale-95 flex items-center justify-center">
+                                    <i data-lucide="plus" class="w-6 h-6"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            // Need to refresh icons for new content
+            lucide.createIcons();
+        }
+
+        // --- MENU LOGIC ---
+        function renderCategories() {
+            const container = document.getElementById('category-container');
+            const cats = ['TODOS', ...Object.values(CATEGORIES)];
+            
+            container.innerHTML = cats.map(cat => `
+                <button onclick="setCategory('${cat}')" 
+                    class="whitespace-nowrap px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 transform active:scale-95 ${currentCategory === cat ? 'bg-pizza-red text-white shadow-lg shadow-red-900/30 scale-105' : 'bg-neutral-900 border border-neutral-800 text-neutral-400 hover:bg-neutral-800 hover:text-white'}">
+                    ${cat}
+                </button>
+            `).join('');
+        }
+
+        function setCategory(cat) {
+            currentCategory = cat;
+            renderCategories();
+            renderMenu();
+        }
+
+        function renderMenu() {
+            const container = document.getElementById('products-grid');
+            let items = [];
+
+            if (currentCategory === 'TODOS') {
+                items = MENU_ITEMS.filter(i => !i.isPromo);
+            } else if (currentCategory === CATEGORIES.OFERTA) {
+                items = MENU_ITEMS.filter(i => i.isPromo);
+            } else {
+                items = MENU_ITEMS.filter(i => i.category === currentCategory);
+            }
+
+            // Render Items
+            let html = '';
+            html += items.map(item => createProductCard(item)).join('');
+            
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function createProductCard(item) {
+            return `
+            <div class="bg-pizza-card rounded-2xl overflow-hidden border border-neutral-800 hover:border-neutral-600 transition duration-300 group flex flex-col h-full transform hover:-translate-y-1 shadow-lg hover:shadow-2xl">
+                <div class="h-48 overflow-hidden relative">
+                    <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90 group-hover:opacity-100">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    ${item.isPromo ? '<span class="absolute top-3 right-3 bg-yellow-500 text-black text-[10px] font-black tracking-widest px-2 py-1 rounded shadow-lg uppercase">Oferta</span>' : ''}
+                </div>
+                <div class="p-5 flex flex-col flex-grow">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-xl font-bold text-white leading-tight group-hover:text-pizza-red transition">${item.name}</h3>
+                        <span class="text-pizza-red font-bold text-lg whitespace-nowrap ml-2">R$ ${item.price.toFixed(2)}</span>
+                    </div>
+                    <p class="text-neutral-400 text-sm mb-5 line-clamp-2 flex-grow font-light leading-relaxed">${item.description}</p>
+                    <button onclick="addToCart('${item.id}')" class="w-full bg-neutral-800 hover:bg-white hover:text-black text-white py-3.5 rounded-xl font-bold transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 group-hover:bg-neutral-700">
+                        <i data-lucide="plus-circle" class="w-5 h-5"></i> Adicionar ao Pedido
+                    </button>
+                </div>
+            </div>
+            `;
+        }
+
+        // --- CART LOGIC ---
+        function addToCart(id) {
+            const product = MENU_ITEMS.find(i => i.id === id);
+            const existing = cart.find(i => i.id === id);
+
+            if (existing) {
+                existing.quantity++;
+            } else {
+                cart.push({ ...product, quantity: 1, observation: '' });
+            }
+
+            renderCart();
+            updateCartCount();
+            openCart();
+            
+            // Visual feedback
+            const btn = document.querySelector(`button[onclick="addToCart('${id}')"]`);
+            if(btn) {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i> Adicionado!';
+                btn.classList.add('bg-green-600', 'text-white', 'border-transparent');
+                lucide.createIcons();
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('bg-green-600', 'text-white');
+                }, 1500);
+            }
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(i => i.id !== id);
+            renderCart();
+            updateCartCount();
+        }
+
+        function updateObs(id, value) {
+            const item = cart.find(i => i.id === id);
+            if (item) item.observation = value;
+        }
+
+        function updateCartCount() {
+            const count = cart.reduce((acc, item) => acc + item.quantity, 0);
+            const badge = document.getElementById('cart-count');
+            badge.textContent = count;
+            badge.classList.toggle('hidden', count === 0);
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            const emptyMsg = document.getElementById('empty-cart-msg');
+            const footer = document.getElementById('cart-footer');
+            const totalEl = document.getElementById('cart-total');
+
+            if (cart.length === 0) {
+                container.innerHTML = '';
+                container.appendChild(emptyMsg);
+                emptyMsg.classList.remove('hidden');
+                footer.classList.add('hidden');
+                return;
+            }
+
+            emptyMsg.classList.add('hidden');
+            footer.classList.remove('hidden');
+
+            const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+            totalEl.textContent = `R$ ${total.toFixed(2)}`;
+
+            container.innerHTML = cart.map(item => `
+                <div class="flex justify-between items-start bg-neutral-900 p-4 rounded-xl border border-neutral-800 animate-[fadeIn_0.3s] group hover:border-neutral-700 transition">
+                    <div class="flex-1 mr-3">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="bg-neutral-800 text-white text-xs font-bold px-2 py-0.5 rounded">${item.quantity}x</span>
+                            <h3 class="font-bold text-white text-sm">${item.name}</h3>
+                        </div>
+                        <p class="text-sm text-pizza-red font-semibold mb-2">R$ ${(item.price * item.quantity).toFixed(2)}</p>
+                        <input type="text" placeholder="Alguma observação?" 
+                            class="w-full bg-black border border-neutral-800 text-xs text-white p-2 rounded-lg focus:outline-none focus:border-pizza-red focus:bg-neutral-900 transition"
+                            value="${item.observation}" onchange="updateObs('${item.id}', this.value)">
+                    </div>
+                    <button onclick="removeFromCart('${item.id}')" class="text-neutral-600 hover:text-red-500 p-2 rounded-full hover:bg-neutral-800 transition">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `).join('');
+            
+            lucide.createIcons();
+        }
+
+        function toggleCart() {
+            const modal = document.getElementById('cart-modal');
+            const drawer = document.getElementById('cart-drawer');
+            
+            if (modal.classList.contains('open')) {
+                drawer.classList.remove('open');
+                setTimeout(() => modal.classList.remove('open'), 300);
+            } else {
+                modal.classList.add('open');
+                setTimeout(() => drawer.classList.add('open'), 10); // Slight delay for transition
+            }
+        }
+
+        function openCart() {
+            const modal = document.getElementById('cart-modal');
+            const drawer = document.getElementById('cart-drawer');
+            if (!modal.classList.contains('open')) {
+                modal.classList.add('open');
+                setTimeout(() => drawer.classList.add('open'), 10);
+            }
+        }
+
+        function setPayment(method) {
+            paymentMethod = method;
+            document.querySelectorAll('.payment-btn').forEach(btn => {
+                if(btn.dataset.method === method) {
+                    btn.classList.remove('bg-black', 'border-neutral-700', 'text-neutral-400');
+                    btn.classList.add('bg-pizza-red', 'border-pizza-red', 'text-white');
+                } else {
+                    btn.classList.add('bg-black', 'border-neutral-700', 'text-neutral-400');
+                    btn.classList.remove('bg-pizza-red', 'border-pizza-red', 'text-white');
+                }
+            });
+            
+            const changeInput = document.getElementById('client-change');
+            if(method === 'DINHEIRO') {
+                changeInput.classList.remove('hidden');
+                setTimeout(() => changeInput.focus(), 100);
+            } else {
+                changeInput.classList.add('hidden');
+            }
+        }
+
+        function checkout() {
+            const name = document.getElementById('client-name').value;
+            const phone = document.getElementById('client-phone').value;
+            const address = document.getElementById('client-address').value;
+            const change = document.getElementById('client-change').value;
+
+            if (!name || !phone || !address) {
+                alert("Por favor, preencha nome, telefone e endereço para entrega.");
+                return;
+            }
+
+            const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+            
+            let message = `*🍕 NOVO PEDIDO - ${PIZZERIA_INFO.name} 🍕*%0A`;
+            message += `--------------------------------%0A`;
+            
+            cart.forEach(item => {
+                message += `*${item.quantity}x ${item.name}*%0A`;
+                if (item.observation) message += `_Obs: ${item.observation}_%0A`;
+                message += `Valor: R$ ${(item.price * item.quantity).toFixed(2)}%0A%0A`;
+            });
+
+            message += `--------------------------------%0A`;
+            message += `*💰 TOTAL: R$ ${total.toFixed(2)}*%0A`;
+            message += `--------------------------------%0A`;
+            message += `*📍 DADOS PARA ENTREGA*%0A`;
+            message += `👤 Nome: ${name}%0A`;
+            message += `📞 Telefone: ${phone}%0A`;
+            message += `🏠 Endereço: ${address}%0A`;
+            message += `💳 Pagamento: ${paymentMethod}%0A`;
+            
+            if (paymentMethod === 'DINHEIRO' && change) {
+                message += `💵 Troco para: R$ ${change}%0A`;
+            }
+
+            const whatsappUrl = `https://wa.me/${PIZZERIA_INFO.phone}?text=${message}`;
+            window.open(whatsappUrl, '_blank');
+            
+            cart = [];
+            renderCart();
+            updateCartCount();
+            toggleCart();
+        }
+
+        // --- SEARCH LOGIC ---
+        function toggleModal(id) {
+            const modal = document.getElementById(id);
+            if (modal.classList.contains('open')) {
+                modal.classList.remove('open');
+            } else {
+                modal.classList.add('open');
+                // Focus input if search
+                if(id === 'search-modal') {
+                    setTimeout(() => document.getElementById('search-input').focus(), 100);
+                    handleSearch(''); // Reset/Show default
+                }
+            }
+        }
+
+        function handleSearch(query) {
+            const container = document.getElementById('search-results');
+            const title = document.getElementById('search-title');
+            
+            let results = [];
+            
+            if(!query) {
+                title.innerHTML = '<i data-lucide="sparkles" class="w-5 h-5"></i> Sugestões do Chef';
+                results = MENU_ITEMS.filter(i => i.isPromo).slice(0, 3);
+            } else {
+                title.innerHTML = `<i data-lucide="search" class="w-5 h-5"></i> Resultados para "${query}"`;
+                const lower = query.toLowerCase();
+                results = MENU_ITEMS.filter(item => 
+                    item.name.toLowerCase().includes(lower) || 
+                    item.description.toLowerCase().includes(lower)
+                );
+            }
+
+            if(results.length === 0) {
+                container.innerHTML = '<div class="col-span-full text-center py-12"><p class="text-neutral-500 text-xl font-medium">Nenhum sabor encontrado.</p><p class="text-neutral-600">Tente buscar por outro ingrediente.</p></div>';
+            } else {
+                container.innerHTML = results.map(item => `
+                    <div class="bg-pizza-card rounded-xl overflow-hidden border border-neutral-800 flex flex-col group hover:border-neutral-600 transition">
+                        <img src="${item.image}" class="w-full h-40 object-cover opacity-80 group-hover:opacity-100 transition">
+                        <div class="p-4 flex flex-col flex-grow">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-white group-hover:text-pizza-red transition">${item.name}</h3>
+                                <span class="text-pizza-red font-bold">R$ ${item.price.toFixed(2)}</span>
+                            </div>
+                            <p class="text-neutral-400 text-sm mb-4 line-clamp-2">${item.description}</p>
+                            <button onclick="addToCart('${item.id}'); toggleModal('search-modal')" class="mt-auto w-full bg-neutral-800 hover:bg-white hover:text-black text-white py-3 rounded-lg font-bold transition flex items-center justify-center gap-2">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Adicionar
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            }
+        }
+
+        // --- STAFF LOGIC ---
+        function sendStaffUpdate(status) {
+            const phoneInput = document.getElementById('staff-phone');
+            const cleanPhone = phoneInput.value.replace(/\D/g, '');
+            
+            if (!cleanPhone) {
+                alert("Digite o telefone do cliente (apenas números)");
+                return;
+            }
+
+            let text = "";
+            switch (status) {
+                case 'RECEIVED':
+                    text = "Olá! Confirmamos o recebimento do seu pedido aqui na Pizza Expresso. Já vamos começar a preparar! 🍕📋";
+                    break;
+                case 'PREPARING':
+                    text = "Seu pedido está no forno! Daqui a pouco estará prontinho e crocante. 🔥👨‍🍳";
+                    break;
+                case 'DELIVERING':
+                    text = "Boas notícias! Seu pedido saiu para entrega. 🛵💨 Nosso entregador está a caminho. Bom apetite!";
+                    break;
+            }
+
+            const url = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
+        // --- MOBILE MENU ---
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>
